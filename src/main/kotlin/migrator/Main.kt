@@ -22,16 +22,19 @@ val BUCKET_FROM = System.getenv("BUCKET_FROM")
 val BUCKET_TO = System.getenv("BUCKET_TO") ?: ""
 val PREFIX_TO = System.getenv("PREFIX_TO") ?: ""
 
+val REGION_TO = Regions.fromName(System.getenv("REGION_TO"))
+val REGION_FROM = Regions.fromName(System.getenv("REGION_FROM"))
+
 fun main(args: Array<String>) {
 
     val s3ClientFrom = AmazonS3ClientBuilder.standard()
         .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(AWS_KEY_FROM, AWS_SECRET_FROM)))
-        .withRegion(Regions.US_EAST_2)
+        .withRegion(REGION_FROM)
         .build()
 
     val s3ClientTo = AmazonS3ClientBuilder.standard()
         .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(AWS_KEY_TO, AWS_SECRET_TO)))
-        .withRegion(Regions.EU_WEST_1)
+        .withRegion(REGION_TO)
         .build()
 
     val summaries = getDataFromS3(s3ClientFrom)
