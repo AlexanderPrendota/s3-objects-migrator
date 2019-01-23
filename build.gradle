@@ -41,6 +41,6 @@ compileTestKotlin {
 }
 
 task execute(type: JavaExec) {
-    main = 'com.migrator.MainKt'
+    main = 'migrator.MainKt'
     classpath = sourceSets.main.runtimeClasspath
 }
