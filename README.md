@@ -1,4 +1,9 @@
-# s3-objects-migrator
+# s3 objects migrator
+
+
+## How to start
+
+1. First of all please add the env variables :wrench:
 
 | ENV                | Description          |
 | -------------------|----------------------|
@@ -10,3 +15,15 @@
 | REGION_TO          | Region               |
 | BUCKET_FROM        | Amazon S3 bucket name|
 | BUCKET_TO          | Amazon S3 bucket name|
+
+2. Build :hammer:
+
+```bash
+./gradlew build
+```
+
+3. Run :rocket:
+
+```bash
+./gradlew execute
+```
