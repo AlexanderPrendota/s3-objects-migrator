@@ -1,9 +1,10 @@
-# s3 objects migrator
+# S3 Objects migrator
 
+Migrate objects with metadata between two S3 storage.
 
 ## How to start
 
-1. First of all please add the env variables :wrench:
+1. Add the env variables :wrench:
 
 | ENV                | Description          |
 | -------------------|----------------------|
