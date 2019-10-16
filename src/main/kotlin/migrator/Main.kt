@@ -7,9 +7,6 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3ClientBuilder
 import com.amazonaws.services.s3.model.S3ObjectSummary
 
-
-val metadataKey = "x-amz-website-redirect-location"
-
 val AWS_KEY_TO = System.getenv("AWS_KEY_TO")
 val AWS_KEY_FROM = System.getenv("AWS_KEY_FROM")
 val AWS_SECRET_TO = System.getenv("AWS_SECRET_TO")
@@ -37,10 +34,6 @@ fun main() {
         .map { it.key }
         .parallelStream()
         .map { s3ClientFrom.getObject(BUCKET_FROM, it) }
-        .filter {
-            it.objectMetadata.getRawMetadataValue(metadataKey) !== null
-                    && it.objectMetadata.getRawMetadataValue(metadataKey).toString().indexOf("#") > 0
-        }
         .forEach { s3Object ->
             println("Sending data for key = ${s3Object.key}...")
             s3ClientTo.putObject(BUCKET_TO, s3Object.key, s3Object.objectContent, s3Object.objectMetadata)
