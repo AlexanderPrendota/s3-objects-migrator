@@ -29,7 +29,7 @@ fun main() {
                 .build()
             val responseInputStream = s3Client.getObject(getRequest, ResponseTransformer.toInputStream())
             val s3Object = responseInputStream.response()
-            println("Sending data for key = ${responseInputStream}...")
+            println("Sending data for key = ${key}...")
             val putRequest = PutObjectRequest.builder()
                 .bucket(BUCKET_TO)
                 .metadata(s3Object.metadata())
