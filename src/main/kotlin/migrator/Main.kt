@@ -10,6 +10,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 
 val BUCKET_FROM = System.getenv("BUCKET_FROM")
 val BUCKET_TO = System.getenv("BUCKET_TO")
+val SUFFIX_FROM = System.getenv("SUFFIX_FROM") ?: ""
+val SUFFIX_TO = System.getenv("SUFFIX_TO") ?: ""
 
 fun main() {
     val s3Client = S3Client.create()
@@ -18,7 +20,7 @@ fun main() {
         .contents()
     val startTime = System.currentTimeMillis()
     summaries
-        .map { it.key() }
+        .map { it.key() + SUFFIX_FROM }
         .parallelStream()
         .forEach { key ->
             val getRequest = GetObjectRequest.builder()
@@ -31,7 +33,7 @@ fun main() {
             val putRequest = PutObjectRequest.builder()
                 .bucket(BUCKET_TO)
                 .metadata(s3Object.metadata())
-                .key(key)
+                .key(key + SUFFIX_TO)
                 .build()
             s3Client.putObject(putRequest, RequestBody.fromInputStream(responseInputStream, s3Object.contentLength()))
         }
