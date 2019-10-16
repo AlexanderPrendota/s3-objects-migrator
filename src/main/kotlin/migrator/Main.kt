@@ -1,42 +1,39 @@
 package migrator
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider
-import com.amazonaws.auth.BasicAWSCredentials
-import com.amazonaws.regions.Regions
-import com.amazonaws.services.s3.AmazonS3
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
-import com.amazonaws.services.s3.model.S3ObjectSummary
+import software.amazon.awssdk.core.sync.RequestBody
+import software.amazon.awssdk.core.sync.ResponseTransformer
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.GetObjectRequest
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest
+import software.amazon.awssdk.services.s3.model.PutObjectRequest
 
-val AWS_KEY_TO = System.getenv("AWS_KEY_TO")
-val AWS_KEY_FROM = System.getenv("AWS_KEY_FROM")
-val AWS_SECRET_TO = System.getenv("AWS_SECRET_TO")
-val AWS_SECRET_FROM = System.getenv("AWS_SECRET_FROM")
+
 val BUCKET_FROM = System.getenv("BUCKET_FROM")
-val BUCKET_TO = System.getenv("BUCKET_TO") ?: ""
-
-val REGION_TO = Regions.fromName(System.getenv("REGION_TO"))
-val REGION_FROM = Regions.fromName(System.getenv("REGION_FROM"))
+val BUCKET_TO = System.getenv("BUCKET_TO")
 
 fun main() {
-    val s3ClientFrom = AmazonS3ClientBuilder.standard()
-        .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(AWS_KEY_FROM, AWS_SECRET_FROM)))
-        .withRegion(REGION_FROM)
-        .build()
-
-    val s3ClientTo = AmazonS3ClientBuilder.standard()
-        .withCredentials(AWSStaticCredentialsProvider(BasicAWSCredentials(AWS_KEY_TO, AWS_SECRET_TO)))
-        .withRegion(REGION_TO)
-        .build()
-
-    val summaries = getDataFromS3(s3ClientFrom)
+    val s3Client = S3Client.create()
+    val summaries = s3Client
+        .listObjects(ListObjectsRequest.builder().bucket(BUCKET_FROM).build())
+        .contents()
     val startTime = System.currentTimeMillis()
     summaries
-        .map { it.key }
+        .map { it.key() }
         .parallelStream()
-        .map { s3ClientFrom.getObject(BUCKET_FROM, it) }
-        .forEach { s3Object ->
-            println("Sending data for key = ${s3Object.key}...")
-            s3ClientTo.putObject(BUCKET_TO, s3Object.key, s3Object.objectContent, s3Object.objectMetadata)
+        .forEach { key ->
+            val getRequest = GetObjectRequest.builder()
+                .bucket(BUCKET_FROM)
+                .key(key)
+                .build()
+            val responseInputStream = s3Client.getObject(getRequest, ResponseTransformer.toInputStream())
+            val s3Object = responseInputStream.response()
+            println("Sending data for key = ${responseInputStream}...")
+            val putRequest = PutObjectRequest.builder()
+                .bucket(BUCKET_TO)
+                .metadata(s3Object.metadata())
+                .key(key)
+                .build()
+            s3Client.putObject(putRequest, RequestBody.fromInputStream(responseInputStream, s3Object.contentLength()))
         }
 
     val endTime = System.currentTimeMillis()
@@ -47,15 +44,4 @@ fun main() {
     println("*************************************")
     println(duration.toString() + "ms")
     println("*************************************")
-}
-
-
-fun getDataFromS3(s3: AmazonS3): List<S3ObjectSummary> {
-    var listing = s3.listObjects(BUCKET_FROM)
-    val summaries = listing.objectSummaries
-    while (listing.isTruncated) {
-        listing = s3.listNextBatchOfObjects(listing)
-        summaries.addAll(listing.objectSummaries)
-    }
-    return summaries
 }
