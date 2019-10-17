@@ -1,12 +1,12 @@
 package migrator
 
-import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
-import software.amazon.awssdk.services.s3.model.GetObjectRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
-import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.S3Object
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 
 val BUCKET_FROM = System.getenv("BUCKET_FROM")
@@ -23,25 +23,15 @@ fun main() {
         .map { it.key() }
         .parallelStream()
         .forEach { key ->
-            val getRequest = GetObjectRequest.builder()
-                .bucket(BUCKET_FROM)
-                .key(key)
-                .build()
-            val bytesResponse = s3Client.getObjectAsBytes(getRequest)
+            val encodedUrl = URLEncoder.encode("$BUCKET_FROM/$key", StandardCharsets.UTF_8.toString())
             val newKey = prepareNewKey(key)
             println("Sending data for key = $key. New key = $newKey. Time since start: ${System.currentTimeMillis() - startTime}ms")
-            val putRequest = PutObjectRequest.builder()
+            val copyObjectRequest = CopyObjectRequest.builder()
+                .copySource(encodedUrl)
                 .bucket(BUCKET_TO)
-                .metadata(bytesResponse.response().metadata())
-                .key(key)
+                .key(newKey)
                 .build()
-            s3Client.putObject(
-                putRequest,
-                RequestBody.fromInputStream(
-                    bytesResponse.asByteArray().inputStream(),
-                    bytesResponse.asByteArray().size.toLong()
-                )
-            )
+            s3Client.copyObject(copyObjectRequest)
         }
 
     val endTime = System.currentTimeMillis()
