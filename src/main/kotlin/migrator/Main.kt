@@ -21,7 +21,6 @@ fun main() {
     println("Got objects from $BUCKET_FROM. Count: ${summaries.size} Time since start: ${System.currentTimeMillis() - startTime}ms")
     summaries
         .map { it.key() }
-        .subList(0, 10)
         .parallelStream()
         .forEach { key ->
             val getRequest = GetObjectRequest.builder()
