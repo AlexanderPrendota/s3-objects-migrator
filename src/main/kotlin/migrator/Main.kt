@@ -4,14 +4,15 @@ import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.GetObjectRequest
-import software.amazon.awssdk.services.s3.model.ListObjectsRequest
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
+import software.amazon.awssdk.services.s3.model.S3Object
 
 
 val BUCKET_FROM = System.getenv("BUCKET_FROM")
 val BUCKET_TO = System.getenv("BUCKET_TO")
-val SUFFIX_FROM = System.getenv("SUFFIX_FROM") ?: ""
-val SUFFIX_TO = System.getenv("SUFFIX_TO") ?: ""
+val PREFIX_FROM = System.getenv("PREFIX_FROM") ?: ""
+val PREFIX_TO = System.getenv("PREFIX_TO") ?: ""
 
 fun main() {
     val s3Client = S3Client.builder().region(Region.EU_WEST_1).build()
@@ -29,7 +30,8 @@ fun main() {
                 .key(key)
                 .build()
             val bytesResponse = s3Client.getObjectAsBytes(getRequest)
-            println("Sending data for key = ${key}... . Time since start: ${System.currentTimeMillis() - startTime}ms")
+            val newKey = prepareNewKey(key)
+            println("Sending data for key = $key. New key = $newKey. Time since start: ${System.currentTimeMillis() - startTime}ms")
             val putRequest = PutObjectRequest.builder()
                 .bucket(BUCKET_TO)
                 .metadata(bytesResponse.response().metadata())
