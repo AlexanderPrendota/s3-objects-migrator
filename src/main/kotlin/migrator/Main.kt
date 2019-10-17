@@ -16,9 +16,7 @@ val PREFIX_TO = System.getenv("PREFIX_TO") ?: ""
 
 fun main() {
     val s3Client = S3Client.builder().region(Region.EU_WEST_1).build()
-    val summaries = s3Client
-        .listObjects(ListObjectsRequest.builder().bucket(BUCKET_FROM).build())
-        .contents()
+    val summaries = getDataFromS3(s3Client)
     val startTime = System.currentTimeMillis()
     summaries
         .map { it.key() }
@@ -54,4 +52,18 @@ fun main() {
     println("*************************************")
     println(duration.toString() + "ms")
     println("*************************************")
+}
+
+fun getDataFromS3(s3Client: S3Client): List<S3Object> {
+    val listObjectsReqManual = ListObjectsV2Request.builder()
+        .bucket(BUCKET_FROM)
+        .maxKeys(1)
+        .build()
+    return s3Client.listObjectsV2Paginator(listObjectsReqManual).flatMap { it.contents() }
+}
+
+
+fun prepareNewKey(key: String): String {
+    return if (PREFIX_FROM.isEmpty() || PREFIX_TO.isEmpty()) key
+    else key.replace(PREFIX_FROM, PREFIX_TO)
 }
