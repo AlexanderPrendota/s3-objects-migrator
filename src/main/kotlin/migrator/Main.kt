@@ -15,9 +15,10 @@ val PREFIX_FROM = System.getenv("PREFIX_FROM") ?: ""
 val PREFIX_TO = System.getenv("PREFIX_TO") ?: ""
 
 fun main() {
+    val startTime = System.currentTimeMillis()
     val s3Client = S3Client.builder().region(Region.EU_WEST_1).build()
     val summaries = getDataFromS3(s3Client)
-    val startTime = System.currentTimeMillis()
+    println("Got objects from $BUCKET_FROM. Count: ${summaries.size} Time since start: ${System.currentTimeMillis() - startTime}ms")
     summaries
         .map { it.key() }
         .subList(0, 10)
