@@ -57,7 +57,7 @@ fun main() {
 fun getDataFromS3(s3Client: S3Client): List<S3Object> {
     val listObjectsReqManual = ListObjectsV2Request.builder()
         .bucket(BUCKET_FROM)
-        .maxKeys(1)
+        .maxKeys(1000)
         .build()
     return s3Client.listObjectsV2Paginator(listObjectsReqManual).flatMap { it.contents() }
 }
@@ -65,5 +65,5 @@ fun getDataFromS3(s3Client: S3Client): List<S3Object> {
 
 fun prepareNewKey(key: String): String {
     return if (PREFIX_FROM.isEmpty() || PREFIX_TO.isEmpty()) key
-    else key.replace(PREFIX_FROM, PREFIX_TO)
+    else PREFIX_TO + key.removePrefix(PREFIX_FROM)
 }
