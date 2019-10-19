@@ -1,4 +1,5 @@
 package migrator
+
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
@@ -7,7 +8,10 @@ import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.*
+import software.amazon.awssdk.services.s3.S3AsyncClient
+import kotlinx.coroutines.future.await
 import java.util.concurrent.atomic.AtomicInteger
+
 val BUCKET_FROM = System.getenv("BUCKET_FROM")
 val BUCKET_TO = System.getenv("BUCKET_TO")
 val PREFIX_FROM = System.getenv("PREFIX_FROM") ?: ""
@@ -18,9 +22,10 @@ val counter: AtomicInteger = AtomicInteger(0)
 fun main() = runBlocking {
     val startTime = System.currentTimeMillis()
     val s3Client = S3Client.builder().region(Region.EU_WEST_1).build()
+    val s3AsyncClient = S3AsyncClient.builder().region(Region.EU_WEST_1).build()
     val summaries = getDataFromS3(s3Client)
     println("Got objects from $BUCKET_FROM. Count: ${summaries.size} Time since start: ${System.currentTimeMillis() - startTime}ms")
-    val mainJob = GlobalScope.launch(Dispatchers.IO) {
+    val mainJob = GlobalScope.launch {
         summaries
             .pmap { it.key() }
             .forEach { key ->
@@ -32,7 +37,7 @@ fun main() = runBlocking {
                         .bucket(BUCKET_TO)
                         .key(newKey)
                         .build()
-                    s3Client.copyObject(copyObjectRequest)
+                    s3AsyncClient.copyObject(copyObjectRequest).await()
                     counter.incrementAndGet()
                 }
             }
