@@ -1,15 +1,15 @@
 package migrator
 
+import kotlinx.coroutines.*
+import kotlinx.coroutines.future.await
 import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request
 import software.amazon.awssdk.services.s3.model.S3Object
-import software.amazon.awssdk.services.s3.model.CopyObjectRequest
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import kotlinx.coroutines.*
-import software.amazon.awssdk.services.s3.S3AsyncClient
-import kotlinx.coroutines.future.await
 import java.util.concurrent.atomic.AtomicInteger
 
 val BUCKET_FROM = System.getenv("BUCKET_FROM")
@@ -42,9 +42,16 @@ fun main() = runBlocking {
                 }
             }
     }
-    while(!mainJob.isCompleted) {
+    while (!mainJob.isCompleted) {
         delay(10000)
-        println(String.format("%d %.2f, time since start %dms", counter.get(), 100.0* counter.get()/summaries.size, System.currentTimeMillis() - startTime))
+        println(
+            String.format(
+                "%d %.2f, time since start %dms",
+                counter.get(),
+                100.0 * counter.get() / summaries.size,
+                System.currentTimeMillis() - startTime
+            )
+        )
     }
     val endTime = System.currentTimeMillis()
     val duration = endTime - startTime
@@ -69,6 +76,6 @@ fun prepareNewKey(key: String): String {
 }
 
 
-fun <A, B>Iterable<A>.pmap(f: suspend (A) -> B): List<B> = runBlocking {
+fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = runBlocking {
     map { async { f(it) } }.map { it.await() }
 }
